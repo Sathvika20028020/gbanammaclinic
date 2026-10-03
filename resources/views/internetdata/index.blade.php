@@ -1,6 +1,6 @@
 @extends('layouts.master')
 
-@section('title', 'Internet Data')
+@section('title', 'Internet Data & Recharges')
 @section('page_title', 'Internet Data')
 
 @section('breadcrumb')
@@ -9,357 +9,161 @@
 
 @push('css')
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/vendors/datatables.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
 @endpush
 
 @section('content')
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 <div class="card">
     <div class="card-body">
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h4 class="mb-0"></h4>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="mb-0">Internet Connections & Recharge Tracker</h4>
 
-    <div class="d-flex gap-2">
-        <a href="{{ route('internetdata.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Add
-        </a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('internetdata.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Add Connection / Recharge
+                </a>
+                <a href="{{ route('internetdata.export') }}" class="btn btn-secondary" id="exportBtn">
+                    <i class="bi bi-download me-1"></i> Export CSV
+                </a>
+            </div>
+        </div>
 
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
-    <i class="bi bi-upload me-1"></i> Import
-</button>
-        <button class="btn btn-secondary" id="exportBtn">
-            <i class="bi bi-download me-1"></i> Export
-        </button>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-2">
-        <label for="corporation_filter" class="form-label">Corporation</label>
-        <select class="form-select" id="corporation_filter">
-            <option value="">All</option>
-            <option value="BBMP">BBMP</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        <label for="constituency_filter" class="form-label">Constituency</label>
-        <select class="form-select" id="constituency_filter">
-            <option value="">All</option>
-            <option value="Bommanahalli">Bommanahalli</option>
-            <option value="Jayanagar">Jayanagar</option>
-            <option value="Koramangala">Koramangala</option>
-            <option value="HSR Layout">HSR Layout</option>
-            <option value="BTM Layout">BTM Layout</option>
-        </select>
-    </div>
-    <div class="col-md-2">
-        <label for="service_type_filter" class="form-label">Service</label>
-        <select class="form-select" id="service_type_filter">
-            <option value="">All</option>
-            <option value="ACT">ACT</option>
-            <option value="Excitel">Excitel</option>
-            <option value="Airtel">Airtel</option>
-            <option value="Hatway">Hatway</option>
-        </select>
-    </div>
-    <div class="col-md-3">
-        <label for="from_date_filter" class="form-label">From Date</label>
-        <input type="date" class="form-control" id="from_date_filter">
-    </div>
-    <div class="col-md-3">
-        <label for="to_date_filter" class="form-label">To Date</label>
-        <input type="date" class="form-control" id="to_date_filter">
-    </div>
-</div>
+        <form method="GET" action="{{ route('internetdata.index') }}" class="row mb-4">
+            <div class="col-md-2">
+                <label for="corporation_filter" class="form-label">Corporation</label>
+                <select class="form-select" name="corporation" id="corporation_filter" onchange="this.form.submit()">
+                    <option value="">All Corporations</option>
+                    @foreach($corporations as $corp)
+                        <option value="{{ $corp->name }}" {{ request('corporation') == $corp->name ? 'selected' : '' }}>{{ $corp->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="constituency_filter" class="form-label">Constituency</label>
+                <select class="form-select" name="constituency" id="constituency_filter" onchange="this.form.submit()">
+                    <option value="">All Constituencies</option>
+                    @foreach($constituencies as $const)
+                        <option value="{{ $const->name }}" {{ request('constituency') == $const->name ? 'selected' : '' }}>{{ $const->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="service_type_filter" class="form-label">ISP Provider</label>
+                <select class="form-select" name="provider" id="service_type_filter" onchange="this.form.submit()">
+                    <option value="">All Providers</option>
+                    <option value="ACT" {{ request('provider') == 'ACT' ? 'selected' : '' }}>ACT</option>
+                    <option value="Airtel" {{ request('provider') == 'Airtel' ? 'selected' : '' }}>Airtel</option>
+                    <option value="Excitel" {{ request('provider') == 'Excitel' ? 'selected' : '' }}>Excitel</option>
+                    <option value="Hathway" {{ request('provider') == 'Hathway' ? 'selected' : '' }}>Hathway</option>
+                    <option value="Jio" {{ request('provider') == 'Jio' ? 'selected' : '' }}>Jio</option>
+                    <option value="BSNL" {{ request('provider') == 'BSNL' ? 'selected' : '' }}>BSNL</option>
+                    <option value="Local" {{ request('provider') == 'Local' ? 'selected' : '' }}>Local</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="from_date_filter" class="form-label">From Date</label>
+                <input type="date" class="form-control" name="from_date" id="from_date_filter" value="{{ request('from_date') }}">
+            </div>
+            <div class="col-md-2">
+                <label for="to_date_filter" class="form-label">To Date</label>
+                <input type="date" class="form-control" name="to_date" id="to_date_filter" value="{{ request('to_date') }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-1">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-filter"></i> Filter</button>
+                <a href="{{ route('internetdata.index') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-counterclockwise"></i> Reset</a>
+            </div>
+        </form>
 
         <div class="table-responsive">
-            <table class="display" id="constituencies-table" style="width:100%">
+            <table class="display" id="internet-table" style="width:100%">
                 <thead>
                     <tr>
                         <th>Sl No</th>
                         <th>Clinic Name</th>
-                        <th>Corportion</th>
+                        <th>Corporation</th>
                         <th>Constituency</th>
                         <th>Ward</th>
                         <th>Contact Person</th>
                         <th>Contact No</th>
-                        <th>Internet Service Provider</th>
-                        <th>I.D</th>
+                        <th>ISP Provider</th>
+                        <th>Internet ID</th>
                         <th>Last Recharge</th>
                         <th>Expiry Date</th>
                         <th>Plan Validity</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <th class="text-center">Action</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                  <tr>
-    <td>1</td>
-    <td>Gbanamma Clinic</td>
-    <td>BBMP</td>
-    <td>Bommanahalli</td>
-    <td>Ward 189</td>
-    <td>Ramesh Kumar</td>
-    <td>9876543210</td>
-    <td>ACT</td>
-    <td>ACT123456</td>
-    <td>09-Jul-2026</td>
-    <td>08-Aug-2026</td>
-    <td>1 Month</td>
-    <td><span class="badge bg-success">Active</span></td>
-    <td class="text-nowrap">
-    <a href="{{ route('internetdata.show') }}" class="btn btn-info btn-sm me-2">
-        <i class="fas fa-eye me-1"></i>View
-    </a>
-    <a href="{{ route('internetdata.edit') }}" class="btn btn-warning btn-sm">
-        <i class="fas fa-edit me-1"></i>Edit
-    </a>
-</td>
-</tr>
-
-<tr>
-    <td>2</td>
-    <td>Jayanagar Clinic</td>
-    <td>BBMP</td>
-    <td>Jayanagar</td>
-    <td>Ward 153</td>
-    <td>Sunitha</td>
-    <td>9123456789</td>
-    <td>Excitel</td>
-    <td>EXC654321</td>
-    <td>05-Jul-2026</td>
-    <td>04-Aug-2026</td>
-      <td>1 Month</td>
-    <td><span class="badge bg-success">Active</span></td>
-    <td class="text-nowrap">
-    <a href="" class="btn btn-info btn-sm me-2">
-        <i class="fas fa-eye me-1"></i>View
-    </a>
-    <a href="" class="btn btn-warning btn-sm">
-        <i class="fas fa-edit me-1"></i>Edit
-    </a>
-</td>
-</tr>
-
-<tr>
-    <td>3</td>
-    <td>Koramangala Clinic</td>
-    <td>BBMP</td>
-    <td>Koramangala</td>
-    <td>Ward 151</td>
-    <td>Mahesh</td>
-    <td>9988776655</td>
-    <td>Airtel</td>
-    <td>AIR789654</td>
-    <td>28-Jun-2026</td>
-    <td>28-Jul-2026</td>
-      <td>1 Month</td>
-    <td><span class="badge bg-warning text-dark">Expiring Soon</span></td>
-    <td class="text-nowrap">
-    <a href="" class="btn btn-info btn-sm me-2">
-        <i class="fas fa-eye me-1"></i>View
-    </a>
-    <a href="" class="btn btn-warning btn-sm">
-        <i class="fas fa-edit me-1"></i>Edit
-    </a>
-</td>
-</tr>
-
-<tr>
-    <td>4</td>
-    <td>HSR Layout Clinic</td>
-    <td>BBMP</td>
-    <td>HSR Layout</td>
-    <td>Ward 174</td>
-    <td>Priya</td>
-    <td>9012345678</td>
-    <td>Hatway</td>
-    <td>HTW456987</td>
-    <td>15-Jun-2026</td>
-    <td>15-Jul-2026</td>
-        <td>1 Month</td>
-    <td><span class="badge bg-danger">Expired</span></td>
-    <td class="text-nowrap">
-    <a href="" class="btn btn-info btn-sm me-2">
-        <i class="fas fa-eye me-1"></i>View
-    </a>
-    <a href="" class="btn btn-warning btn-sm">
-        <i class="fas fa-edit me-1"></i>Edit
-    </a>
-</td>
-</tr>
-
-<tr>
-    <td>5</td>
-    <td>BTM Clinic</td>
-    <td>BBMP</td>
-    <td>BTM Layout</td>
-    <td>Ward 147</td>
-    <td>Anil</td>
-    <td>9090909090</td>
-    <td>ACT</td>
-    <td>ACT987321</td>
-    <td>01-Jul-2026</td>
-    <td>31-Jul-2026</td>
-      <td>1 Month</td>
-    <td><span class="badge bg-success">Active</span></td>
-    <td class="text-nowrap">
-    <a href="" class="btn btn-info btn-sm me-2">
-        <i class="fas fa-eye me-1"></i>View
-    </a>
-    <a href="" class="btn btn-warning btn-sm">
-        <i class="fas fa-edit me-1"></i>Edit
-    </a>
-</td>
-</tr>
+                    @forelse($installations as $index => $ins)
+                        @php
+                            $user = $ins->user;
+                            $ward = $user?->ward ?? $ins->ward;
+                            $constituency = $ward?->constituency;
+                            $corporation = $constituency?->zone?->corporation;
+                            $computedStatus = $ins->computed_status;
+                            $badgeClass = match($computedStatus) {
+                                'active' => 'bg-success',
+                                'expiring_soon' => 'bg-warning text-dark',
+                                'expired' => 'bg-danger',
+                                default => 'bg-secondary'
+                            };
+                            $badgeText = match($computedStatus) {
+                                'active' => 'Active',
+                                'expiring_soon' => 'Expiring Soon',
+                                'expired' => 'Expired',
+                                default => ucfirst($computedStatus)
+                            };
+                        @endphp
+                        <tr>
+                            <td>{{ $index + 1 }}</td>
+                            <td><strong>{{ $user?->clinic_name ?? 'N/A' }}</strong></td>
+                            <td>{{ $corporation?->name ?? 'BBMP' }}</td>
+                            <td>{{ $constituency?->name ?? 'N/A' }}</td>
+                            <td>{{ $ward ? $ward->name . ' (' . ($ward->number ?? '') . ')' : 'N/A' }}</td>
+                            <td>{{ $user?->name ?? 'N/A' }}</td>
+                            <td>{{ $user?->phone ?? 'N/A' }}</td>
+                            <td><span class="badge bg-light text-dark border">{{ $ins->provider ?? 'N/A' }}</span></td>
+                            <td><code>{{ $ins->internet_id ?? 'N/A' }}</code></td>
+                            <td>{{ $ins->last_recharge_date ? $ins->last_recharge_date->format('d-M-Y') : ($ins->installed_on ? $ins->installed_on->format('d-M-Y') : 'N/A') }}</td>
+                            <td>{{ $ins->recharge_expiry_date ? $ins->recharge_expiry_date->format('d-M-Y') : ($ins->expiry_date ?? 'N/A') }}</td>
+                            <td>{{ $ins->plan_validity ?? '6 Months' }}</td>
+                            <td><span class="badge {{ $badgeClass }}">{{ $badgeText }}</span></td>
+                            <td class="text-nowrap text-center">
+                                <a href="{{ route('internetdata.show', $ins->id) }}" class="btn btn-info btn-sm me-1" title="View Details & Recharges">
+                                    <i class="fas fa-eye me-1"></i>View
+                                </a>
+                                <a href="{{ route('internetdata.edit', $ins->id) }}" class="btn btn-warning btn-sm" title="Edit Internet Credentials">
+                                    <i class="fas fa-edit me-1"></i>Edit
+                                </a>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="14" class="text-center text-muted py-4">No internet data records found.</td>
+                        </tr>
+                    @endforelse
                 </tbody>
-
             </table>
-        </div>
-
-    </div>
-    </div>
-    <!-- Import Modal -->
-<div class="modal fade" id="importModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-
-            <div class="modal-header">
-                <h5 class="modal-title">Import Internet Data</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-
-            <div class="modal-body">
-
-                <div class="mb-3">
-                    <label class="form-label">Choose Excel File</label>
-                    <input type="file"
-                           id="importFile"
-                           class="form-control"
-                           accept=".xlsx,.xls,.csv">
-                    <small class="text-danger d-none" id="fileError">
-                        Please select an Excel or CSV file.
-                    </small>
-                </div>
-
-            </div>
-
-            <div class="modal-footer">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">
-                    Cancel
-                </button>
-
-                <button class="btn btn-success" id="importBtn">
-                    Import
-                </button>
-            </div>
-
         </div>
     </div>
 </div>
-
-
 @endsection
 
 @push('scripts')
-
-
 <script src="{{ asset('assets/js/datatable/datatables/jquery.dataTables.min.js') }}"></script>
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-    $(document).ready(function () {
-        $('#corporation_filter, #constituency_filter, #service_type_filter').select2({
-            theme: 'bootstrap-5',
-            width: '100%',
-            placeholder: "Select ",
-            allowClear: true
-        });
-
-        var table = $('#constituencies-table').DataTable();
-
-        $('#corporation_filter').on('change', function () {
-            table.column(2).search(this.value).draw();
-        });
-
-        $('#constituency_filter').on('change', function () {
-            table.column(3).search(this.value).draw();
-        });
-
-        $('#service_type_filter').on('change', function () {
-            table.column(7).search(this.value).draw();
-        });
-
-        $('#from_date_filter, #to_date_filter').on('change', function () {
-            table.draw();
+    $(document).ready(function() {
+        $('#internet-table').DataTable({
+            order: [[0, 'asc']]
         });
     });
-
-    // Custom Date Range filter for DataTables
-    $.fn.dataTable.ext.search.push(
-        function( settings, data, dataIndex ) {
-            var from = $('#from_date_filter').val();
-            var to = $('#to_date_filter').val();
-            
-            // Assuming "Last Recharge" is at index 9 (10th column)
-            var dateStr = data[9]; 
-            if (!dateStr) return true;
-
-            var date = new Date(dateStr);
-            var fromDate = from ? new Date(from) : null;
-            var toDate = to ? new Date(to) : null;
-            
-            if (fromDate && date < fromDate) return false;
-            if (toDate && date > toDate) return false;
-            
-            return true;
-        }
-    );
 </script>
-
-<script>
-    $('#importBtn').click(function () {
-
-        let file = $('#importFile').val();
-
-        if (file == '') {
-            $('#fileError').removeClass('d-none');
-            return;
-        }
-
-        $('#fileError').addClass('d-none');
-
-        // Close Bootstrap Modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('importModal'));
-        modal.hide();
-
-        Swal.fire({
-            title: 'Importing...',
-            text: 'Please wait...',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        setTimeout(function () {
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Imported Successfully!',
-                text: 'Internet Data imported successfully.',
-                confirmButtonColor: '#198754'
-            });
-
-            $('#importFile').val('');
-
-        }, 2000);
-
-    });
-</script>
-
-
 @endpush

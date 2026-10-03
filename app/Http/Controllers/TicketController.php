@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\Ward;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -30,37 +31,52 @@ class TicketController extends Controller
     public function create()
     {
         $user = Auth::user();
+        $users = null;
 
         if ($user->hasRole('admin')) {
-            abort(403, 'Admins cannot raise tickets.');
+            $users = User::role('user')
+                ->with('ward')
+                ->orderBy('clinic_name')
+                ->get();
+
+            // If no user with role 'user', get all users except current admin
+            if ($users->isEmpty()) {
+                $users = User::where('id', '!=', $user->id)
+                    ->with('ward')
+                    ->orderBy('clinic_name')
+                    ->get();
+            }
         }
 
-        return view('tickets.create', compact('user'));
+        return view('tickets.create', compact('user', 'users'));
     }
-
 
     public function store(Request $request)
     {
-        $user = Auth::user();
+        $currentUser = Auth::user();
 
-        if ($user->hasRole('admin')) {
-            abort(403, 'Admins cannot create tickets.');
+        $rules = [
+            'description'         => 'required|string|max:5000',
+            'contact_person_name' => 'required|string|max:255',
+            'phone'               => 'required|digits:10|regex:/^[0-9]{10}$/',
+        ];
+
+        if ($currentUser->hasRole('admin')) {
+            $rules['user_id'] = 'required|exists:users,id';
         }
 
-        $validated = $request->validate([
-            'description' => 'required|string|max:5000',
-            'contact_person_name'   => 'required|string|max:255',
-            'phone' => 'required|digits:10|regex:/^[0-9]{10}$/',
-        ]);
+        $validated = $request->validate($rules);
+
+        $targetUserId = $currentUser->hasRole('admin') ? $validated['user_id'] : $currentUser->id;
 
         Ticket::create([
-            'user_id'     => $user->id,
-            'description' => $validated['description'],
-            'status'      => 'Pending',
-            'phone'       => $validated['phone'],
-            'contact_person_name'        => $validated['contact_person_name'],
-            'admin_remarks' => null,
-            'admin_image'   => null,
+            'user_id'             => $targetUserId,
+            'description'         => $validated['description'],
+            'status'              => 'Pending',
+            'phone'               => $validated['phone'],
+            'contact_person_name' => $validated['contact_person_name'],
+            'admin_remarks'       => null,
+            'admin_image'         => null,
         ]);
 
         return redirect()
@@ -68,22 +84,23 @@ class TicketController extends Controller
             ->with('success', 'Ticket raised successfully!');
     }
 
-
     public function show($id)
     {
         $ticket = Ticket::with(['user.ward'])->findOrFail($id);
 
-        $this->authorize('view', $ticket);
+        $currentUser = Auth::user();
+        if (!$currentUser->hasRole('admin') && $ticket->user_id !== $currentUser->id) {
+            abort(403, 'Unauthorized access to this ticket.');
+        }
 
         return view('tickets.show', compact('ticket'));
     }
-
 
     public function edit($id)
     {
         $user = Auth::user();
 
-        if ($user->hasRole('user')) {
+        if (!$user->hasRole('admin')) {
             abort(403, 'Only admins can resolve tickets.');
         }
 
@@ -92,13 +109,12 @@ class TicketController extends Controller
         return view('tickets.edit', compact('ticket'));
     }
 
-
     public function update(Request $request, $id)
     {
         $user = Auth::user();
 
-        if ($user->hasRole('user')) {
-            abort(403, 'Only admins can update tickets.');
+        if (!$user->hasRole('admin')) {
+            abort(403, 'Only admins can resolve tickets.');
         }
 
         $ticket = Ticket::findOrFail($id);
@@ -116,7 +132,6 @@ class TicketController extends Controller
 
         // Handle image upload
         if ($request->hasFile('admin_image')) {
-
             // Delete previous image if exists
             if ($ticket->admin_image) {
                 Storage::disk('public')->delete($ticket->admin_image);
@@ -136,9 +151,8 @@ class TicketController extends Controller
 
         return redirect()
             ->route('tickets.index')
-            ->with('success', 'Ticket updated successfully!');
+            ->with('success', 'Ticket status updated successfully!');
     }
-
 
     public function destroy($id)
     {

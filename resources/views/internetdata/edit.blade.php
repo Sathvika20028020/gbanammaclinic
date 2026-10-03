@@ -4,170 +4,174 @@
 @section('page_title', 'Edit Internet Data')
 
 @section('breadcrumb')
-<li class="breadcrumb-item"><a href="{{ route('internetdata') }}">Internet Data</a></li>
-<li class="breadcrumb-item active">Edit</li>
+    <li class="breadcrumb-item"><a href="{{ route('internetdata.index') }}">Internet Data</a></li>
+    <li class="breadcrumb-item active">Edit</li>
 @endsection
 
 @section('content')
-
 <div class="card">
+    <div class="card-header pb-0">
+        <h5>Edit Internet Connection Details</h5>
+    </div>
     <div class="card-body">
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-        <form id="internetForm" class="needs-validation" novalidate>
+        @php
+            $user = $installation->user;
+            $ward = $user?->ward ?? $installation->ward;
+            $constituency = $ward?->constituency;
+            $corporation = $constituency?->zone?->corporation;
+        @endphp
+
+        <form id="internetForm" class="needs-validation" novalidate method="POST" action="{{ route('internetdata.update', $installation->id) }}">
+            @csrf
+            @method('PUT')
 
             <div class="row">
-
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Clinic Name <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="clinic_name"
-                        value="Gbanamma Clinic" required>
-                    <div class="invalid-feedback">Please enter Clinic Name.</div>
+                    <label class="form-label">Clinic Name</label>
+                    <input type="text" class="form-control" value="{{ $user?->clinic_name ?? 'N/A' }}" readonly>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Corporation <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="corporation"
-                        value="BBMP" required>
-                    <div class="invalid-feedback">Please enter Corporation.</div>
+                    <label class="form-label">Corporation</label>
+                    <input type="text" class="form-control" value="{{ $corporation?->name ?? 'BBMP' }}" readonly>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Constituency <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="constituency"
-                        value="Bommanahalli" required>
-                    <div class="invalid-feedback">Please enter Constituency.</div>
+                    <label class="form-label">Constituency</label>
+                    <input type="text" class="form-control" value="{{ $constituency?->name ?? 'N/A' }}" readonly>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Ward <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="ward"
-                        value="Ward 189" required>
-                    <div class="invalid-feedback">Please enter Ward.</div>
+                    <label class="form-label">Ward</label>
+                    <input type="text" class="form-control" value="{{ $ward?->name ?? 'N/A' }}" readonly>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Contact Person <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control" name="contact_person"
-                        value="Ramesh Kumar" required>
-                    <div class="invalid-feedback">Please enter Contact Person.</div>
+                    <label class="form-label">Contact Person</label>
+                    <input type="text" class="form-control" value="{{ $user?->name ?? 'N/A' }}" readonly>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Contact Number <span class="text-danger">*</span></label>
-                    <input type="tel" class="form-control"
-                        name="contact_no"
-                        value="9876543210"
-                        pattern="[0-9]{10}"
-                        maxlength="10"
-                        required>
-                    <div class="invalid-feedback">
-                        Please enter a valid Contact Number.
-                    </div>
+                    <label class="form-label">Contact Number</label>
+                    <input type="tel" class="form-control" value="{{ $user?->phone ?? 'N/A' }}" readonly>
                 </div>
 
+                <hr class="my-3">
+                <h6 class="text-primary mb-3"><i class="fa fa-wifi me-1"></i> Connection & ISP Details</h6>
+
                 <div class="col-md-6 mb-3">
-                    <label class="form-label">Internet Service Provider <span class="text-danger">*</span></label>
+                    <label class="form-label">Internet Service Provider (ISP) <span class="text-danger">*</span></label>
                     <select class="form-select" name="provider" required>
-                        <option>ACT</option>
-                        <option selected>Airtel</option>
-                        <option>Excitel</option>
-                        <option>Hatway</option>
+                        <option value="ACT" {{ old('provider', $installation->provider) == 'ACT' ? 'selected' : '' }}>ACT</option>
+                        <option value="Airtel" {{ old('provider', $installation->provider) == 'Airtel' ? 'selected' : '' }}>Airtel</option>
+                        <option value="Excitel" {{ old('provider', $installation->provider) == 'Excitel' ? 'selected' : '' }}>Excitel</option>
+                        <option value="Hathway" {{ old('provider', $installation->provider) == 'Hathway' ? 'selected' : '' }}>Hathway</option>
+                        <option value="Jio" {{ old('provider', $installation->provider) == 'Jio' ? 'selected' : '' }}>Jio</option>
+                        <option value="BSNL" {{ old('provider', $installation->provider) == 'BSNL' ? 'selected' : '' }}>BSNL</option>
+                        <option value="Local" {{ old('provider', $installation->provider) == 'Local' ? 'selected' : '' }}>Local</option>
+                        <option value="Other" {{ old('provider', $installation->provider) == 'Other' ? 'selected' : '' }}>Other</option>
+                    </select>
+                    <div class="invalid-feedback">Please select Provider.</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Internet / Account ID <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="internet_id" value="{{ old('internet_id', $installation->internet_id) }}" required>
+                    <div class="invalid-feedback">Please enter Internet ID.</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Internet Password / Secret</label>
+                    <input type="text" class="form-control" name="internet_password" value="{{ old('internet_password', $installation->internet_password) }}" placeholder="Leave blank to keep unchanged">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Status <span class="text-danger">*</span></label>
+                    <select class="form-select" name="status" required>
+                        <option value="active" {{ old('status', $installation->status) == 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ old('status', $installation->status) == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                        <option value="expired" {{ old('status', $installation->status) == 'expired' ? 'selected' : '' }}>Expired</option>
                     </select>
                 </div>
 
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Internet ID <span class="text-danger">*</span></label>
-                    <input type="text" class="form-control"
-                        name="internet_id"
-                        value="AIR789654"
-                        required>
+                <hr class="my-3">
+                <h6 class="text-primary mb-3"><i class="fa fa-calendar me-1"></i> Current Recharge Information</h6>
+
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Last Recharge Date <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" name="last_recharge_date" id="last_recharge_date" 
+                           value="{{ old('last_recharge_date', optional($installation->last_recharge_date)->format('Y-m-d') ?? optional($installation->installed_on)->format('Y-m-d')) }}" required>
                 </div>
 
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Internet Password <span class="text-danger">*</span></label>
-                    <input type="password" class="form-control" name="internet_password" value="password123" required>
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Last Recharge</label>
-                    <input type="date" class="form-control"
-                        value="2026-07-09">
-                </div>
-
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Expiry Date</label>
-                    <input type="date" class="form-control"
-                        value="2026-08-08">
-                </div>
-
-                <div class="col-md-6 mb-3">
+                <div class="col-md-4 mb-3">
                     <label class="form-label">Plan Validity <span class="text-danger">*</span></label>
-                    <select class="form-select" name="plan_validity" required>
-                        <option value="">Select Plan Validity</option>
-                        <option selected>1 Month</option>
-                        <option>3 Months</option>
-                        <option>6 Months</option>
-                        <option>1 Year</option>
+                    <select class="form-select" name="plan_validity" id="plan_validity" required>
+                        <option value="1 Month" {{ old('plan_validity', $installation->plan_validity) == '1 Month' ? 'selected' : '' }}>1 Month</option>
+                        <option value="3 Months" {{ old('plan_validity', $installation->plan_validity) == '3 Months' ? 'selected' : '' }}>3 Months</option>
+                        <option value="6 Months" {{ old('plan_validity', $installation->plan_validity ?? '6 Months') == '6 Months' ? 'selected' : '' }}>6 Months</option>
+                        <option value="1 Year" {{ old('plan_validity', $installation->plan_validity) == '1 Year' ? 'selected' : '' }}>1 Year</option>
                     </select>
                 </div>
 
-                <div class="col-md-6 mb-3">
-                    <label class="form-label">Status</label>
-                    <select class="form-select">
-                        <option selected>Active</option>
-                        <option>Inactive</option>
-                        <option>Expired</option>
-                    </select>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Calculated Expiry Date</label>
+                    <input type="date" class="form-control" name="expiry_date" id="expiry_date" 
+                           value="{{ old('expiry_date', optional($installation->recharge_expiry_date)->format('Y-m-d')) }}" readonly>
                 </div>
-
             </div>
 
-            <div class="text-center mt-4">
-                <button class="btn btn-warning">
-                    <i class="fas fa-edit me-1"></i> Update
-                </button>
-
-               
+            <div class="d-flex justify-content-center gap-2 mt-4">
+                <a href="{{ route('internetdata.show', $installation->id) }}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary px-4">Update Internet Data</button>
             </div>
-
         </form>
-
     </div>
 </div>
-
 @endsection
 
 @push('scripts')
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-(() => {
+    document.addEventListener('DOMContentLoaded', function() {
+        const rechargeDateInput = document.getElementById('last_recharge_date');
+        const validitySelect = document.getElementById('plan_validity');
+        const expiryDateInput = document.getElementById('expiry_date');
 
-    const form = document.getElementById('internetForm');
+        function calculateExpiry() {
+            if (!rechargeDateInput.value) return;
+            const date = new Date(rechargeDateInput.value);
+            const validity = validitySelect.value;
 
-    form.addEventListener('submit', function(e){
+            if (validity === '1 Month') {
+                date.setMonth(date.getMonth() + 1);
+            } else if (validity === '3 Months') {
+                date.setMonth(date.getMonth() + 3);
+            } else if (validity === '6 Months') {
+                date.setMonth(date.getMonth() + 6);
+            } else if (validity === '1 Year') {
+                date.setFullYear(date.getFullYear() + 1);
+            }
 
-        e.preventDefault();
-
-        if(!form.checkValidity()){
-            e.stopPropagation();
-            form.classList.add('was-validated');
-            return;
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            expiryDateInput.value = `${yyyy}-${mm}-${dd}`;
         }
 
-        Swal.fire({
-            icon:'success',
-            title:'Updated!',
-            text:'Internet Data Updated Successfully.',
-            confirmButtonColor:'#3085d6'
-        }).then(()=>{
-            window.location.href="{{ route('internetdata') }}";
-        });
-
+        rechargeDateInput.addEventListener('change', calculateExpiry);
+        validitySelect.addEventListener('change', calculateExpiry);
+        if(!expiryDateInput.value) {
+            calculateExpiry();
+        }
     });
-
-})();
 </script>
-
 @endpush

@@ -76,7 +76,7 @@
                     @endrole
 
                     <li class="sidebar-list">
-                            <a class="sidebar-link sidebar-title link-nav d-flex flex-row gap-2 align-items-center {{ request()->routeIs('internetdata*') ? 'active1' : '' }}" href="{{ route('internetdata') }}">
+                            <a class="sidebar-link sidebar-title link-nav d-flex flex-row gap-2 align-items-center {{ request()->routeIs('internetdata*') ? 'active1' : '' }}" href="{{ route('internetdata.index') }}">
                                 <i class="fa fa-globe"></i>
                                 <span>Internet Data</span>
                             </a>

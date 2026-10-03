@@ -30,10 +30,11 @@
                     <th>Sl.No</th>
                     <th>Clinic Name</th>
                     <th>Ward</th>
-                    <th>Communication Person Number</th>
+                    <th>Contact Person / Phone</th>
                     <th>Issue Description</th>
+                    <th>Admin Reply / Remarks</th>
                     <th>Status</th>
-                    <th>Actions</th>
+                    <th class="text-center">Actions</th>
                 </tr>
             </thead>
 
@@ -41,17 +42,26 @@
                 @forelse ($tickets as $index => $ticket)
                     <tr>
                         <td>{{ $index + 1 }}</td>
-
-                        <td>{{ optional($ticket->user)->clinic_name ?? 'N/A' }}</td>
-
-                  
+                        <td><strong>{{ optional($ticket->user)->clinic_name ?? 'N/A' }}</strong></td>
                         <td>{{ optional(optional($ticket->user)->ward)->name ?? 'N/A' }}</td>
-
-                
-                        <td>{{ $ticket->phone ?? 'N/A' }}</td>
-
-                      
-                        <td>{{ \Illuminate\Support\Str::limit($ticket->description ?? '—', 80) }}</td>
+                        <td>
+                            <div>{{ $ticket->contact_person_name ?? 'N/A' }}</div>
+                            <small class="text-muted"><i class="fa fa-phone me-1"></i>{{ $ticket->phone ?? 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <span title="{{ $ticket->description }}">
+                                {{ \Illuminate\Support\Str::limit($ticket->description ?? '—', 60) }}
+                            </span>
+                        </td>
+                        <td>
+                            @if($ticket->admin_remarks)
+                                <span class="text-dark" title="{{ $ticket->admin_remarks }}">
+                                    {{ \Illuminate\Support\Str::limit($ticket->admin_remarks, 60) }}
+                                </span>
+                            @else
+                                <span class="text-muted fst-italic">Awaiting reply...</span>
+                            @endif
+                        </td>
 
                         {{-- STATUS BADGE --}}
                         <td>
@@ -89,7 +99,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-center">No tickets found for your current view.</td>
+                        <td colspan="8" class="text-center text-muted py-4">No tickets found for your current view.</td>
                     </tr>
                 @endforelse
             </tbody>

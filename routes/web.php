@@ -85,23 +85,16 @@ Route::get('/env-check', function () {
     ];
 });
 
-Route::get('/internetdata', function () {
-    return view('internetdata.index');
-})->name('internetdata');
-
-Route::post('/internetdata', function () {
-    return redirect()->route('internetdata');
+Route::middleware(['auth', 'active.user'])->group(function () {
+    Route::get('/internetdata', [App\Http\Controllers\InternetDataController::class, 'index'])->name('internetdata.index');
+    Route::get('/internetdata/export', [App\Http\Controllers\InternetDataController::class, 'export'])->name('internetdata.export');
+    Route::get('/internetdata/create', [App\Http\Controllers\InternetDataController::class, 'create'])->name('internetdata.create');
+    Route::post('/internetdata', [App\Http\Controllers\InternetDataController::class, 'store'])->name('internetdata.store');
+    Route::get('/internetdata/{id}', [App\Http\Controllers\InternetDataController::class, 'show'])->name('internetdata.show');
+    Route::get('/internetdata/{id}/edit', [App\Http\Controllers\InternetDataController::class, 'edit'])->name('internetdata.edit');
+    Route::put('/internetdata/{id}', [App\Http\Controllers\InternetDataController::class, 'update'])->name('internetdata.update');
+    Route::post('/internetdata/{id}/recharge', [App\Http\Controllers\InternetDataController::class, 'storeRecharge'])->name('internetdata.recharge.store');
 });
-
-Route::get('/internetdata/edit', function () {
-    return view('internetdata.edit');
-})->name('internetdata.edit');
-Route::get('/internetdata/show', function () {
-    return view('internetdata.show');
-})->name('internetdata.show');
-Route::get('/internetdata/create', function () {
-    return view('internetdata.create');
-})->name('internetdata.create');
 
 Route::get('/members-called', function () {
     return view('members_called.index');
